@@ -1,7 +1,7 @@
 # CanaryAir Studio — Dashboard profesional y elegante
 # Requisitos recomendados:
-# pip install streamlit pandas sqlalchemy plotly pydeck streamlit-keplergl keplergl
-# Opcional para exportación de imágenes: pip install -U kaleido
+# pip install streamlit pandas sqlalchemy plotly
+# pip install -U kaleido (opcional para exportar PNG)
 
 import streamlit as st
 import pandas as pd
@@ -10,15 +10,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 import plotly.graph_objects as go
 import plotly.express as px
-import pydeck as pdk
-
-# Kepler.gl opcional
-try:
-    from keplergl import KeplerGl
-    import streamlit_keplergl as skgl
-    KEPLER_AVAILABLE = True
-except Exception:
-    KEPLER_AVAILABLE = False
+from plotly.subplots import make_subplots
 
 # ---------------------------------------------------------------------------------------
 # Configuración general
@@ -30,90 +22,142 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Tema elegante sobrio
+# Tema elegante sobrio con mejor contraste
 st.markdown("""
 <style>
     /* Tipografía elegante y colores discretos */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-    html, body, .stApp { font-family: 'Inter', sans-serif; }
-    .stApp { background: #0F141B; color: #E6E8EB; }
-
-    /* Contenedores */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    html, body, .stApp { 
+        font-family: 'Inter', sans-serif;
+        background: #0F141B;
+        color: #E6E8EB;
+    }
+    
+    /* Mejor contraste para textos */
+    .stMarkdown, .stText, .stWrite {
+        color: #E6E8EB !important;
+    }
+    
+    /* Textos en sidebar más legibles */
+    .css-1d391kg, .css-1v3fvcr, .css-1lcbmhc {
+        color: #CBD5E1 !important;
+    }
+    
+    /* Contenedores con mejor contraste */
     .card {
         background: #121820;
-        border: 1px solid #1C2430;
+        border: 1px solid #2A3646;
         border-radius: 16px;
-        padding: 20px;
+        padding: 24px;
+        color: #E6E8EB;
     }
     .soft {
-        background: #11171E;
-        border: 1px solid #202A36;
+        background: #131A24;
+        border: 1px solid #263040;
         border-radius: 12px;
-        padding: 16px;
+        padding: 20px;
+        color: #E6E8EB;
     }
-
-    /* Títulos */
-    h1, h2, h3 { color: #E6E8EB; }
-    .title-xl {
-        font-size: 34px; font-weight: 700; letter-spacing: -0.02em;
-    }
-    .title-md {
-        font-size: 20px; font-weight: 700; letter-spacing: -0.01em;
-    }
-
-    /* Métricas */
-    div[data-testid="stMetric"] {
-        background: #121820;
-        border: 1px solid #1C2430;
-        border-radius: 14px;
-        padding: 18px 16px;
-        box-shadow: none;
-    }
-    div[data-testid="stMetric"] label {
-        color: #9AA6B2 !important;
-        text-transform: none !important;
-        font-size: 12px !important;
+    
+    /* Títulos con mejor contraste */
+    h1, h2, h3, h4 {
+        color: #FFFFFF !important;
         font-weight: 600 !important;
     }
+    
+    .title-xl {
+        font-size: 36px; 
+        font-weight: 700; 
+        letter-spacing: -0.02em;
+        color: #FFFFFF !important;
+        margin-bottom: 8px;
+    }
+    
+    .title-md {
+        font-size: 22px; 
+        font-weight: 600; 
+        letter-spacing: -0.01em;
+        color: #FFFFFF !important;
+        margin-bottom: 12px;
+    }
+    
+    .title-sm {
+        font-size: 16px;
+        font-weight: 500;
+        color: #CBD5E1 !important;
+        margin-bottom: 8px;
+    }
+    
+    /* Mejorar métricas */
+    div[data-testid="stMetric"] {
+        background: #121820;
+        border: 1px solid #2A3646;
+        border-radius: 14px;
+        padding: 20px 16px;
+    }
+    
+    div[data-testid="stMetric"] label {
+        color: #9AA6B2 !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.02em;
+    }
+    
     div[data-testid="stMetric"] [data-testid="stMetricValue"] {
-        color: #E6E8EB !important;
-        font-size: 26px !important;
+        color: #FFFFFF !important;
+        font-size: 28px !important;
         font-weight: 700 !important;
     }
-
-    /* Tabs */
+    
+    div[data-testid="stMetricDelta"] {
+        font-size: 14px !important;
+        font-weight: 500 !important;
+    }
+    
+    /* Mejorar tabs */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px; background: #11171E; border: 1px solid #202A36;
-        padding: 8px; border-radius: 12px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        background: transparent; border-radius: 8px; color: #CBD5E1;
-        font-weight: 600; padding: 10px 14px;
-    }
-    .stTabs [data-baseweb="tab"]:hover { background: #16202A; color: #E6E8EB; }
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(180deg, #182230 0%, #141A22 100%) !important; color: #E6E8EB !important;
+        gap: 8px; 
+        background: #11171E; 
         border: 1px solid #2A3646;
+        padding: 8px; 
+        border-radius: 12px;
     }
-
-    /* Botones */
-    .stButton > button {
-        background: linear-gradient(180deg, #1B2A38 0%, #182230 100%);
-        color: #E6E8EB; border: 1px solid #2A3646;
-        border-radius: 10px; padding: 10px 16px; font-weight: 700;
+    
+    .stTabs [data-baseweb="tab"] {
+        color: #9AA6B2 !important;
+        font-weight: 500;
+        padding: 10px 20px;
     }
-    .stButton > button:hover { border-color: #3A4B62; background: #1E2D3D; }
-
-    /* Dataframe */
-    .stDataFrame { background: #11171E; border-radius: 12px; overflow: hidden; }
-    .stDataFrame [class*="rowHeading"], .stDataFrame [class*="colHeading"] {
-        background: #10161D !important; color: #9AA6B2 !important;
-        border-color: #1C2430 !important;
+    
+    .stTabs [aria-selected="true"] {
+        background: #1A2433 !important;
+        color: #FFFFFF !important;
+        border: 1px solid #3A4B62;
     }
-
-    /* Ocultar marcas de Streamlit */
-    #MainMenu, header {visibility: hidden;}
-    footer {visibility: hidden;}
+    
+    /* Dataframes mejorados */
+    .stDataFrame {
+        background: #11171E;
+        border: 1px solid #2A3646;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    /* Mejorar inputs */
+    .stSelectbox, .stSlider, .stDateInput {
+        color: #E6E8EB !important;
+    }
+    
+    .st-bd, .st-ae, .st-ag {
+        color: #E6E8EB !important;
+    }
+    
+    /* Tooltips y popovers */
+    .stTooltip {
+        background: #1A2433 !important;
+        color: #E6E8EB !important;
+        border: 1px solid #2A3646 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -220,43 +264,200 @@ def plot_distribution(df):
     )
     return fig
 
-def create_kepler_map(df):
-    # Construye una capa hexbin y puntos si hay lat/lon (simulamos Maspalomas si no hay)
-    base_lat, base_lon = 27.9576, -15.5995
-    if 'lat' not in df.columns or 'lon' not in df.columns:
-        dfg = df.copy()
-        dfg['lat'] = base_lat + np.random.normal(0, 0.02, len(dfg))
-        dfg['lon'] = base_lon + np.random.normal(0, 0.02, len(dfg))
-    else:
-        dfg = df.copy()
-
-    m = KeplerGl(height=520, data={"mediciones": dfg})
-    # Configuración visual básica sobria (se puede exportar desde Kepler y pegar aquí)
-    # Para un setup instantáneo, dejamos que Kepler detecte columnas automáticamente.
-    return m
-
-def create_pydeck_map(df):
-    # Mapa elegante de pydeck centrado en Maspalomas
-    ultimo = df.iloc[-1]
-    lat, lon = 27.9576, -15.5995
-    radius = float(max(250, min(2000, ultimo['pm10'] * 80)))
-
-    layer = pdk.Layer(
-        "ScatterplotLayer",
-        data=pd.DataFrame({"lat":[lat], "lon":[lon], "pm10":[ultimo['pm10']], "pm25":[ultimo['pm2_5']]}),
-        get_position='[lon, lat]',
-        get_radius=radius,
-        get_fill_color='[86,177,242,160]',  # azul suave
-        stroked=True, get_line_color='[42,54,70]'
+# Nuevas funciones para análisis estadístico
+def plot_correlation_matrix(df):
+    # Calcular correlaciones
+    corr_matrix = df[['pm10', 'pm2_5', 'dust']].corr()
+    
+    fig = go.Figure(data=go.Heatmap(
+        z=corr_matrix.values,
+        x=corr_matrix.columns,
+        y=corr_matrix.columns,
+        colorscale='RdBu',
+        zmin=-1,
+        zmax=1,
+        text=np.round(corr_matrix.values, 2),
+        texttemplate='%{text}',
+        textfont={"size": 14},
+        hoverongaps=False
+    ))
+    
+    fig.update_layout(
+        height=500,
+        paper_bgcolor="#0F141B",
+        plot_bgcolor="#121820",
+        font=dict(color="#E6E8EB", size=12),
+        margin=dict(l=20, r=20, t=40, b=20),
+        xaxis=dict(
+            tickangle=45,
+            gridcolor="#1C2430",
+            title_font=dict(size=14)
+        ),
+        yaxis=dict(
+            gridcolor="#1C2430",
+            title_font=dict(size=14)
+        ),
+        title=dict(
+            text="Matriz de Correlación entre Variables",
+            font=dict(size=18, color="#FFFFFF"),
+            x=0.5
+        )
     )
-    text_layer = pdk.Layer(
-        "TextLayer",
-        data=pd.DataFrame({"lat":[lat], "lon":[lon], "text":[f"PM10 {ultimo['pm10']:.1f} • PM2.5 {ultimo['pm2_5']:.1f}"]}),
-        get_position='[lon, lat]', get_text='text',
-        get_color='[230,232,235,220]', get_size=16
+    
+    # Configurar la barra de color CORRECTAMENTE
+    fig.update_coloraxes(
+        colorbar=dict(
+            title="Correlación",
+            tickfont=dict(size=10, color="#E6E8EB")
+        )
     )
-    view = pdk.ViewState(latitude=lat, longitude=lon, zoom=10.5, pitch=35, bearing=0)
-    return pdk.Deck(layers=[layer, text_layer], initial_view_state=view, map_style='mapbox://styles/mapbox/dark-v10')
+    
+    return fig
+
+def plot_scatter_matrix(df):
+    # Crear subplots
+    variables = ['pm10', 'pm2_5', 'dust']
+    fig = make_subplots(
+        rows=len(variables)-1, 
+        cols=len(variables)-1,
+        subplot_titles=[f"{x} vs {y}" for x in variables[1:] for y in variables[:-1]],
+        horizontal_spacing=0.1,
+        vertical_spacing=0.1
+    )
+    
+    colors = df['pm10'].values
+    color_scale = px.colors.sequential.Viridis
+    
+    # Agregar scatter plots
+    for i, y_var in enumerate(variables[1:], 1):
+        for j, x_var in enumerate(variables[:-1], 1):
+            if i > j:  # Solo mitad inferior
+                fig.add_trace(
+                    go.Scatter(
+                        x=df[x_var],
+                        y=df[y_var],
+                        mode='markers',
+                        marker=dict(
+                            size=5,
+                            color=colors,
+                            colorscale=color_scale,
+                            showscale=(i==1 and j==1),
+                            colorbar=dict(title="PM10")
+                        ),
+                        opacity=0.6,
+                        name=f"{x_var} vs {y_var}"
+                    ),
+                    row=i, col=j
+                )
+                
+                # Agregar línea de tendencia
+                z = np.polyfit(df[x_var], df[y_var], 1)
+                p = np.poly1d(z)
+                x_range = np.linspace(df[x_var].min(), df[x_var].max(), 100)
+                fig.add_trace(
+                    go.Scatter(
+                        x=x_range,
+                        y=p(x_range),
+                        mode='lines',
+                        line=dict(color='#FF6B6B', width=2, dash='dash'),
+                        showlegend=False
+                    ),
+                    row=i, col=j
+                )
+    
+    fig.update_layout(
+        height=600,
+        paper_bgcolor="#0F141B",
+        plot_bgcolor="#121820",
+        font=dict(color="#E6E8EB", size=10),
+        margin=dict(l=40, r=40, t=60, b=40),
+        showlegend=False,
+        title=dict(
+            text="Matriz de Dispersión entre Variables",
+            font=dict(size=18, color="#FFFFFF"),
+            x=0.5
+        )
+    )
+    
+    # Actualizar ejes
+    for i in range(1, len(variables)):
+        for j in range(1, len(variables)):
+            fig.update_xaxes(
+                gridcolor="#1C2430",
+                zerolinecolor="#1C2430",
+                row=i, col=j
+            )
+            fig.update_yaxes(
+                gridcolor="#1C2430",
+                zerolinecolor="#1C2430",
+                row=i, col=j
+            )
+    
+    return fig
+
+def plot_radar_chart(df):
+    # Calcular estadísticas normalizadas
+    stats = df[['pm10', 'pm2_5', 'dust']].agg(['mean', 'max', 'std']).T
+    
+    # Normalizar para el radar chart (0-100)
+    stats_normalized = (stats['mean'] / stats['max'].max() * 100).fillna(0)
+    
+    fig = go.Figure()
+    
+    fig.add_trace(go.Scatterpolar(
+        r=stats_normalized.values,
+        theta=stats_normalized.index,
+        fill='toself',
+        fillcolor='rgba(86, 177, 242, 0.4)',
+        line_color='#56B1F2',
+        name='Valor Normalizado'
+    ))
+    
+    # Agregar líneas de referencia
+    for value in [25, 50, 75]:
+        fig.add_trace(go.Scatterpolar(
+            r=[value] * len(stats_normalized),
+            theta=stats_normalized.index,
+            mode='lines',
+            line=dict(color='rgba(143, 155, 170, 0.3)', dash='dot'),
+            showlegend=False
+        ))
+    
+    fig.update_layout(
+        polar=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0, 100],
+                gridcolor="#1C2430",
+                tickfont=dict(color="#E6E8EB")
+            ),
+            angularaxis=dict(
+                gridcolor="#1C2430",
+                tickfont=dict(color="#E6E8EB")
+            ),
+            bgcolor="#121820"
+        ),
+        height=500,
+        paper_bgcolor="#0F141B",
+        font=dict(color="#E6E8EB"),
+        margin=dict(l=40, r=40, t=60, b=40),
+        title=dict(
+            text="Perfil de Contaminantes (Normalizado)",
+            font=dict(size=18, color="#FFFFFF"),
+            x=0.5
+        ),
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            bgcolor="rgba(15, 20, 27, 0.8)"
+        )
+    )
+    
+    return fig
 
 def main():
     # ---------------------------------------------------------------------------------------
@@ -322,16 +523,99 @@ def main():
     with c5:
         st.metric("AQI (comunicativo)", f"{aqi:.0f}", estado)
     
-    st.markdown(
-        f"<div class='soft' style='border-left: 4px solid {color_estado}; margin-top: 10px;'>"
-        f"<b>Estado actual:</b> {estado}. Rango visual guiado: 50/100 µg/m³ como bandas de referencia.</div>",
-        unsafe_allow_html=True
-    )
+    # Línea de estado mejorada
+    st.markdown(f"""
+    <div class='soft' style='
+        border-left: 6px solid {color_estado}; 
+        padding: 16px 20px;
+        margin: 20px 0;
+        background: linear-gradient(90deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.2) 100%);
+    '>
+        <div style='display: flex; justify-content: space-between; align-items: center;'>
+            <div>
+                <h4 style='margin: 0 0 8px 0; color: #FFFFFF;'>Estado Actual: <span style='color: {color_estado}'>{estado}</span></h4>
+                <p style='margin: 0; color: #CBD5E1; font-size: 14px;'>
+                    PM10: {ultimo['pm10']:.1f} µg/m³ | PM2.5: {ultimo['pm2_5']:.1f} µg/m³ | Polvo: {ultimo['dust']:.1f} µg/m³
+                </p>
+            </div>
+            <div style='text-align: right;'>
+                <div style='font-size: 12px; color: #9AA6B2;'>AQI Comunicativo</div>
+                <div style='font-size: 24px; font-weight: 700; color: #FFFFFF;'>{aqi:.0f}</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Barras de progreso para cada contaminante
+    st.markdown("<div class='title-sm'>📊 Niveles Actuales (vs Límites)</div>", unsafe_allow_html=True)
+    
+    # Definir límites
+    limites = {
+        'pm10': {'excelente': 20, 'bueno': 50, 'moderado': 100, 'malo': 200, 'max': 300},
+        'pm2_5': {'excelente': 10, 'bueno': 25, 'moderado': 50, 'malo': 100, 'max': 150},
+        'dust': {'excelente': 30, 'bueno': 60, 'moderado': 120, 'malo': 200, 'max': 300}
+    }
+    
+    col_prog1, col_prog2, col_prog3 = st.columns(3)
+    
+    with col_prog1:
+        pm10_pct = min(100, (ultimo['pm10'] / limites['pm10']['max']) * 100)
+        st.markdown(f"""
+        <div style='margin-bottom: 20px;'>
+            <div style='display: flex; justify-content: space-between; margin-bottom: 4px;'>
+                <span style='color: #56B1F2; font-weight: 500;'>PM10</span>
+                <span style='color: #FFFFFF; font-weight: 600;'>{ultimo['pm10']:.1f} µg/m³</span>
+            </div>
+            <div style='background: #1C2430; height: 8px; border-radius: 4px; overflow: hidden;'>
+                <div style='background: #56B1F2; height: 100%; width: {pm10_pct}%; border-radius: 4px;'></div>
+            </div>
+            <div style='display: flex; justify-content: space-between; margin-top: 4px;'>
+                <span style='font-size: 11px; color: #8F9BAA;'>0</span>
+                <span style='font-size: 11px; color: #8F9BAA;'>{limites['pm10']['max']} µg/m³</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col_prog2:
+        pm25_pct = min(100, (ultimo['pm2_5'] / limites['pm2_5']['max']) * 100)
+        st.markdown(f"""
+        <div style='margin-bottom: 20px;'>
+            <div style='display: flex; justify-content: space-between; margin-bottom: 4px;'>
+                <span style='color: #7F8CFF; font-weight: 500;'>PM2.5</span>
+                <span style='color: #FFFFFF; font-weight: 600;'>{ultimo['pm2_5']:.1f} µg/m³</span>
+            </div>
+            <div style='background: #1C2430; height: 8px; border-radius: 4px; overflow: hidden;'>
+                <div style='background: #7F8CFF; height: 100%; width: {pm25_pct}%; border-radius: 4px;'></div>
+            </div>
+            <div style='display: flex; justify-content: space-between; margin-top: 4px;'>
+                <span style='font-size: 11px; color: #8F9BAA;'>0</span>
+                <span style='font-size: 11px; color: #8F9BAA;'>{limites['pm2_5']['max']} µg/m³</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col_prog3:
+        dust_pct = min(100, (ultimo['dust'] / limites['dust']['max']) * 100)
+        st.markdown(f"""
+        <div style='margin-bottom: 20px;'>
+            <div style='display: flex; justify-content: space-between; margin-bottom: 4px;'>
+                <span style='color: #E96A97; font-weight: 500;'>Polvo</span>
+                <span style='color: #FFFFFF; font-weight: 600;'>{ultimo['dust']:.1f} µg/m³</span>
+            </div>
+            <div style='background: #1C2430; height: 8px; border-radius: 4px; overflow: hidden;'>
+                <div style='background: #E96A97; height: 100%; width: {dust_pct}%; border-radius: 4px;'></div>
+            </div>
+            <div style='display: flex; justify-content: space-between; margin-top: 4px;'>
+                <span style='font-size: 11px; color: #8F9BAA;'>0</span>
+                <span style='font-size: 11px; color: #8F9BAA;'>{limites['dust']['max']} µg/m³</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
     
     # ---------------------------------------------------------------------------------------
     # Visualización
     # ---------------------------------------------------------------------------------------
-    tab1, tab2, tab3 = st.tabs(["Evolución temporal", "Mapa geoespacial", "Patrones y distribución"])
+    tab1, tab2, tab3 = st.tabs(["Evolución temporal", "Análisis estadístico", "Patrones y distribución"])
     
     with tab1:
         st.plotly_chart(plot_timeline(df_sel), width='stretch')
@@ -346,24 +630,85 @@ def main():
             st.metric("Std PM10", f"{df_sel['pm10'].std():.1f}")
     
     with tab2:
-        col_map1, col_map2 = st.columns([2, 1])
-        with col_map1:
-            st.markdown("<div class='title-md'>Mapa interactivo</div>", unsafe_allow_html=True)
-            if KEPLER_AVAILABLE:
-                st.info("Kepler.gl activado: visual geoespacial avanzada.")
-                kmap = create_kepler_map(df_sel)
-                skgl.keplergl_static(kmap)
-            else:
-                st.info("Kepler.gl no disponible. Mostrando mapa elegante con PyDeck.")
-                st.pydeck_chart(create_pydeck_map(df_sel), width='stretch')
-        with col_map2:
-            st.markdown("<div class='card'>", unsafe_allow_html=True)
-            st.markdown("<div class='title-md'>Ubicación</div>", unsafe_allow_html=True)
-            st.write("- Zona: Maspalomas, Gran Canaria")
-            st.write("- Coordenadas: 27.96°N, 15.60°W")
-            st.write("- Frecuencia: actualización horaria")
-            st.write("- Origen de datos: PostgreSQL")
-            st.markdown("</div>", unsafe_allow_html=True)
+        tab2_1, tab2_2, tab2_3 = st.tabs(["Matriz de Correlación", "Matriz de Dispersión", "Perfil Radar"])
+        
+        with tab2_1:
+            st.markdown("<div class='title-md'>📊 Análisis de Correlación</div>", unsafe_allow_html=True)
+            st.write("""
+            <div class='soft'>
+            <b>Interpretación:</b><br>
+            • <span style='color:#56B1F2'>Correlación positiva (+)</span>: Las variables aumentan juntas<br>
+            • <span style='color:#E96A97'>Correlación negativa (-)</span>: Una aumenta cuando la otra disminuye<br>
+            • <span style='color:#8F9BAA'>Cercano a 0</span>: Poca o ninguna relación
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.plotly_chart(plot_correlation_matrix(df_sel), width='stretch')
+            
+            # Estadísticas de correlación
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                corr_pm10_pm25 = df_sel['pm10'].corr(df_sel['pm2_5'])
+                st.metric("PM10 vs PM2.5", f"{corr_pm10_pm25:.3f}", 
+                         "Alta correlación" if abs(corr_pm10_pm25) > 0.7 else "Correlación moderada")
+            with col2:
+                corr_pm10_dust = df_sel['pm10'].corr(df_sel['dust'])
+                st.metric("PM10 vs Polvo", f"{corr_pm10_dust:.3f}",
+                         "Fuertemente relacionado" if abs(corr_pm10_dust) > 0.8 else "Relación media")
+            with col3:
+                corr_pm25_dust = df_sel['pm2_5'].corr(df_sel['dust'])
+                st.metric("PM2.5 vs Polvo", f"{corr_pm25_dust:.3f}",
+                         "Relación fuerte" if abs(corr_pm25_dust) > 0.7 else "Relación débil")
+        
+        with tab2_2:
+            st.markdown("<div class='title-md'>📈 Matriz de Dispersión</div>", unsafe_allow_html=True)
+            st.write("""
+            <div class='soft'>
+            <b>Visualización de relaciones:</b> Cada punto representa una medición. 
+            La línea discontinua muestra la tendencia lineal. El color indica el valor de PM10.
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.plotly_chart(plot_scatter_matrix(df_sel), width='stretch')
+            
+            # Insights automáticos
+            st.markdown("<div class='title-sm'>📌 Insights detectados:</div>", unsafe_allow_html=True)
+            
+            # Calcular algunas relaciones clave
+            if len(df_sel) > 10:
+                ratio_pm25_pm10 = (df_sel['pm2_5'] / df_sel['pm10']).mean()
+                dust_contribution = (df_sel['dust'] / (df_sel['pm10'] + df_sel['pm2_5'])).mean() * 100
+                
+                col_ins1, col_ins2 = st.columns(2)
+                with col_ins1:
+                    st.info(f"**Ratio PM2.5/PM10:** {ratio_pm25_pm10:.2%}\n\n"
+                           f"Un ratio alto indica predominio de partículas finas (más peligrosas).")
+                with col_ins2:
+                    st.info(f"**Contribución del polvo:** {dust_contribution:.1f}%\n\n"
+                           f"Porcentaje que representa el polvo en la contaminación total.")
+        
+        with tab2_3:
+            st.markdown("<div class='title-md'>🎯 Perfil Radar</div>", unsafe_allow_html=True)
+            st.write("""
+            <div class='soft'>
+            <b>Comparativa normalizada:</b> Muestra el perfil relativo de cada contaminante.
+            Valores más cercanos al borde exterior indican concentraciones más altas.
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.plotly_chart(plot_radar_chart(df_sel), width='stretch')
+            
+            # Datos adicionales
+            col_rad1, col_rad2, col_rad3 = st.columns(3)
+            with col_rad1:
+                max_pm10 = df_sel['pm10'].max()
+                st.metric("PM10 Máx", f"{max_pm10:.1f} µg/m³")
+            with col_rad2:
+                max_pm25 = df_sel['pm2_5'].max()
+                st.metric("PM2.5 Máx", f"{max_pm25:.1f} µg/m³")
+            with col_rad3:
+                max_dust = df_sel['dust'].max()
+                st.metric("Polvo Máx", f"{max_dust:.1f} µg/m³")
     
     with tab3:
         colp1, colp2 = st.columns(2)
