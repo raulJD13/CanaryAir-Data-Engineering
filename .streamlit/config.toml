@@ -1,0 +1,7 @@
+[theme]
+base = "dark"
+primaryColor = "#FF4B4B" # Un rojo vibrante para resaltar
+backgroundColor = "#F0F2F6" # Gris muy suave (menos agresivo que el blanco puro)
+secondaryBackgroundColor = "#D4EBF8" # Blanco para las tarjetas/sidebar
+textColor = "#262730" # Texto oscuro legible
+font = "sans serif"

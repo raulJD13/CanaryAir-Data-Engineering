@@ -1,0 +1,16 @@
+# --- Basura de Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Entornos Virtuales (NO SUBIR NUNCA) ---
+venv/
+env/
+.env  <-- contraseñas
+
+# --- Archivos de Sistema ---
+.DS_Store
+
+# --- Datos de Docker (Son pesados y se regeneran) ---
+postgres_data/
+pgadmin_data/

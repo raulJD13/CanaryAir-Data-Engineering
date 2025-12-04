@@ -1,0 +1,9 @@
+pandas
+geopandas
+sqlalchemy
+psycopg2-binary
+requests
+streamlit
+pydeck
+schedule
+folium

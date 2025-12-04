@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgis/postgis:15-3.3-alpine
+    container_name: canary_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: canaryair
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4:7.6
+    container_name: canary_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_MAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASS}
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  # --- NUEVO SERVICIO: TU ROBOT DE DATOS ---
+  etl_worker:
+    build: .             # Construye la imagen usando el Dockerfile de esta carpeta
+    container_name: canary_etl
+    restart: always      # Si falla, se levanta solo
+    depends_on:
+      - db               # Espera a que la BD arranque
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+
+volumes:
+  postgres_data:
+  pgadmin_data:
