@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-"""
-AIR QUALITY ENGINEERING DASHBOARD
-Professional Data Engineering Platform
-Connection: PostgreSQL → mediciones_aire
-"""
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -22,7 +15,7 @@ warnings.filterwarnings('ignore')
 # ============================================================================
 st.set_page_config(
     page_title="Air Quality Engineering Dashboard",
-    page_icon="📊",
+    page_icon="〄",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
