@@ -494,9 +494,9 @@ def main():
     # ---------------------------------------------------------------------------------------
     # Encabezado
     # ---------------------------------------------------------------------------------------
-    st.markdown("<div class='title-xl'>🌬️ CanaryAir Studio</div>", unsafe_allow_html=True)
-    st.write("Un dashboard sobrio y profesional para monitorizar PM10, PM2.5 y polvo en Gran Canaria.")
-    
+    st.markdown("<div class='title-xl'>CanaryAir Studio</div>", unsafe_allow_html=True)
+    st.write("Un dashboard monitorizar PM10, PM2.5 y polvo en Gran Canaria.")
+    st.write("PM10 y PM2.5 son partículas en suspensión en el aire. PM10 incluye polvo y polen, mientras que PM2.5 son partículas más finas que penetran más profundamente en los pulmones.")
     # ---------------------------------------------------------------------------------------
     # KPIs principales
     # ---------------------------------------------------------------------------------------
@@ -633,7 +633,7 @@ def main():
         tab2_1, tab2_2, tab2_3 = st.tabs(["Matriz de Correlación", "Matriz de Dispersión", "Perfil Radar"])
         
         with tab2_1:
-            st.markdown("<div class='title-md'>📊 Análisis de Correlación</div>", unsafe_allow_html=True)
+            st.markdown("<div class='title-md'>Análisis de Correlación</div>", unsafe_allow_html=True)
             st.write("""
             <div class='soft'>
             <b>Interpretación:</b><br>
@@ -661,7 +661,7 @@ def main():
                          "Relación fuerte" if abs(corr_pm25_dust) > 0.7 else "Relación débil")
         
         with tab2_2:
-            st.markdown("<div class='title-md'>📈 Matriz de Dispersión</div>", unsafe_allow_html=True)
+            st.markdown("<div class='title-md'>Matriz de Dispersión</div>", unsafe_allow_html=True)
             st.write("""
             <div class='soft'>
             <b>Visualización de relaciones:</b> Cada punto representa una medición. 
