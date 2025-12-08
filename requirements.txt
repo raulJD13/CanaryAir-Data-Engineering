@@ -1,9 +1,10 @@
+streamlit
 pandas
-geopandas
+numpy
 sqlalchemy
 psycopg2-binary
 requests
-streamlit
+python-dotenv
 pydeck
-schedule
-folium
+plotly
+scipy

@@ -8,6 +8,9 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 from scipy import stats
 import warnings
+import os
+from dotenv import load_dotenv
+load_dotenv()
 warnings.filterwarnings('ignore')
 
 # ============================================================================
@@ -249,9 +252,37 @@ class AirQualityDataPipeline:
         query = f"SELECT * FROM mediciones_aire ORDER BY fecha DESC LIMIT {limit}"
         return self.execute_query(query)
 
-# Initialize Pipeline
-DB_CONNECTION = "postgresql://admin_canary:CanaryIslands2025!@localhost:5433/canaryair"
-pipeline = AirQualityDataPipeline(DB_CONNECTION)
+# ============================================================================
+# INITIALIZATION (CLOUD VS LOCAL LOGIC ROBUSTA)
+# ============================================================================
+def get_db_connection():
+    """Determina la conexión correcta a prueba de fallos"""
+    
+    # 1. PRIMERO: Intentamos leer archivo .env (Para tu Mac)
+    # Al hacerlo primero, evitamos que Streamlit busque 'secrets.toml' y falle
+    env_cloud = os.getenv('DATABASE_URL_CLOUD')
+    if env_cloud:
+        # print("DEBUG: Usando conexión desde .env") # Descomentar para depurar
+        return env_cloud
+
+    # 2. SEGUNDO: Intentamos leer st.secrets (Para Streamlit Cloud)
+    # Usamos un try/except para que no explote si estás en local
+    try:
+        if hasattr(st, "secrets") and "DATABASE_URL_CLOUD" in st.secrets:
+            return st.secrets["DATABASE_URL_CLOUD"]
+    except FileNotFoundError:
+        pass # No pasa nada, es que estamos en local sin secrets.toml
+
+    # 3. TERCERO: Fallback a Docker Local (Si todo lo demás falla)
+    return "postgresql://admin_canary:CanaryIslands2025!@localhost:5433/canaryair"
+
+# Inicializar Pipeline
+try:
+    CURRENT_CONNECTION = get_db_connection()
+    pipeline = AirQualityDataPipeline(CURRENT_CONNECTION)
+except Exception as e:
+    st.error(f"Critical Connection Error: {e}")
+    st.stop()
 
 # ============================================================================
 # ENGINEERING VISUALIZATION COMPONENTS - CORREGIDO
