@@ -7,7 +7,6 @@
 [![GitHub Actions](https://img.shields.io/badge/CI%2FCD-Automated-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)](https://github.com/features/actions)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-![CanaryAir Banner](https://via.placeholder.com/1200x300/1a1a1a/ffffff?text=CanaryAir+|+Real-Time+Air+Quality+Monitoring)
 
 > A production-ready data engineering solution for real-time air quality monitoring in the Canary Islands, featuring automated ETL pipelines, cloud infrastructure, and interactive analytics.
 
