@@ -12,6 +12,10 @@
 
 **Live Dashboard:** [https://canaryair-data-engineering.streamlit.app/](https://canaryair-data-engineering.streamlit.app/)
 
+
+![Image](https://github.com/user-attachments/assets/b91d18ef-1d95-4d4d-b5e0-dfab84f221ef)
+
+
 ---
 
 ## Table of Contents
