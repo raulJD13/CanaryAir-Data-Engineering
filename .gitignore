@@ -6,7 +6,8 @@ __pycache__/
 # --- Entornos Virtuales (NO SUBIR NUNCA) ---
 venv/
 env/
-.env  <-- contraseñas
+# Archivo  secretos
+.env
 
 # --- Archivos de Sistema ---
 .DS_Store
