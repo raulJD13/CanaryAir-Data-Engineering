@@ -76,7 +76,6 @@ The Canary Islands experience frequent "Calima" episodes—atmospheric events wh
 
 ## Architecture
 
-![Architecture Diagram](https://via.placeholder.com/1000x600/2a2a2a/ffffff?text=CanaryAir+Architecture+Diagram)
 
 The system implements a **Cloud-Native ETL Architecture** with the following components:
 
