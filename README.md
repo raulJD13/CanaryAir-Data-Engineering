@@ -799,7 +799,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - GitHub: [@raulJD13](https://github.com/raulJD13)
 - LinkedIn: [Connect with me]([https://www.linkedin.com/in/raul-jimenez-data-engineer](https://www.linkedin.com/in/raul-jimenez-delgado-06108436b/))
-- Email: raul.jimenez@example.com
+- Email: raul.jimenez.del@gmail.com
 - Portfolio: [raul-jimenez.dev](https://raul-jimenez.dev)
 
 ---
